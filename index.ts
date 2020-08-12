@@ -5,8 +5,8 @@
  */
 import parser from "./parser";
 
-let [f, appId, country] = parser();
+let [f, appId, country, proxy] = parser();
 
 (async () => {
-  await f(appId, country);
+  await f(appId, country, proxy);
 })();

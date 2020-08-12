@@ -8,19 +8,27 @@ import google from "./google";
 
 // 访问构造
 // google: https://play.google.com/store/apps/details?id=com.openwow.win
-const googlePlayCrawler = async (appId: string, country: string) => {
+const googlePlayCrawler = async (
+  appId: string,
+  country: string,
+  proxy: string
+) => {
   const url = `https://play.google.com/store/apps/details?id=${appId}`;
   console.log(`google: ${url}`);
-  await google(url, country);
+  await google(url, country, proxy);
 };
 
 // apple: https://itunes.apple.com/us/app/id1472822892?mt=8 跳转
 // apple: https://apps.apple.com/jp/app/id1472822892#?platform=iphone
 // apple: https://apps.apple.com/jp/app/id1472822892#?platform=ipad
-const appleStoreCrawler = async (appId: string, country: string) => {
-  const url = `https://itunes.apple.com/${country}/app/${appId}?mt=8`;
+const appleStoreCrawler = async (
+  appId: string,
+  country: string,
+  proxy: string
+) => {
+  const url = `https://itunes.apple.com/${country}/app/${appId}`;
   console.log(`apple: ${url}`);
-  await apple(url, country);
+  await apple(url, country, proxy);
 };
 
 export default {

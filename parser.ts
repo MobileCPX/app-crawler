@@ -6,11 +6,34 @@
 // 区分商店类别
 import STORE from "./crawler/index";
 
-const parse = (): [Function, string, string] => {
-  const ARGS: string[] = process.argv;
+interface IArgs {
+  app: string;
+  country: string;
+  proxy: string;
+}
+
+const parse = (): [Function, string, string, string] => {
+  let ARGS: IArgs = { app: "", country: "", proxy: "" };
+
+  process.argv.map((value) => {
+    if (value.startsWith("app=")) {
+      ARGS.app = value.split("app=")[1];
+      return;
+    }
+
+    if (value.startsWith("country=")) {
+      ARGS.country = value.split("country=")[1];
+      return;
+    }
+
+    if (value.startsWith("proxy=")) {
+      ARGS.proxy = value.split("proxy=")[1];
+      return;
+    }
+  });
 
   // 参数检测
-  if (ARGS.length < 3) {
+  if (!ARGS.app) {
     console.log("please enter app info.");
     console.log("default value for country would be us.\n");
     console.log("example:");
@@ -26,31 +49,22 @@ const parse = (): [Function, string, string] => {
   // 参数解析
   let appId: string;
   let country: string;
+  let proxy: string;
   let executer: Function;
 
-  const APP_PARAMS: string[] = ARGS[2].split("app=");
-
   // country
-  if (ARGS[3]) {
-    const COUNTRY_PARAMS: string[] = ARGS[3].split("country=");
-    if (COUNTRY_PARAMS[1]) {
-      country = COUNTRY_PARAMS[1].toLowerCase();
-    } else {
-      // 未正确解析，默认us
-      console.log("wrong value for country ", ARGS[3]);
-      console.log("set default value 'us' for country");
-      country = "us";
-    }
+  if (ARGS.country) {
+    country = ARGS.country.toLowerCase();
   } else {
     console.log("set default value 'us' for country");
     country = "us";
   }
 
   // app
-  if (APP_PARAMS[1]) {
-    appId = APP_PARAMS[1].toLowerCase();
+  if (ARGS.app) {
+    appId = ARGS.app.toLowerCase();
   } else {
-    console.log("wrong value for app ", ARGS[2]);
+    console.log("no value for app ");
     process.exit();
   }
 
@@ -81,7 +95,16 @@ const parse = (): [Function, string, string] => {
     executer = STORE.googlePlayCrawler;
   }
 
-  return [executer, appId, country];
+  // 代理配置
+  if (ARGS.proxy) {
+    proxy = ARGS.proxy;
+    // 加上http
+    if (proxy.length > 1 && !proxy.startsWith("http")) {
+      proxy = "http://" + proxy;
+    }
+  }
+
+  return [executer, appId, country, proxy];
 };
 
 export default parse;
