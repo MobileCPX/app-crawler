@@ -23,12 +23,12 @@ if (ARGS.length < 3) {
 let appId: string;
 let country: string;
 
-const APP_PARAMS: string[] = ARGS[2].split("=");
+const APP_PARAMS: string[] = ARGS[2].split("app=");
 
 // country
 if (ARGS[3]) {
-  const COUNTRY_PARAMS: string[] = ARGS[3].split("=");
-  if (COUNTRY_PARAMS[0] === "country" && COUNTRY_PARAMS[1]) {
+  const COUNTRY_PARAMS: string[] = ARGS[3].split("country=");
+  if (COUNTRY_PARAMS[1]) {
     country = COUNTRY_PARAMS[1].toLowerCase();
   } else {
     // 未正确解析，默认us
@@ -42,7 +42,7 @@ if (ARGS[3]) {
 }
 
 // app
-if (APP_PARAMS[0] === "app" && APP_PARAMS[1]) {
+if (APP_PARAMS[1]) {
   appId = APP_PARAMS[1].toLowerCase();
 } else {
   console.log("wrong value for app ", ARGS[2]);
@@ -53,27 +53,32 @@ if (APP_PARAMS[0] === "app" && APP_PARAMS[1]) {
 import STORE from "./crawler/index";
 
 // 输入的是网址
-if (appId.indexOf("http") !== -1) {
-  let params: string[] = appId.split("id");
-  if (params.length < 2) {
-    console.log("not a valid url ", appId);
+if (appId.startsWith("http")) {
+  const APPLE_REG = /^http.*\.com\/(\w+)\/app\/(id\d+)#?/;
+  const GOOGLE_REG = /^http.*\?id=(.*)/;
+
+  if (APPLE_REG.test(appId)) {
+    country = appId.match(APPLE_REG)[1];
+    appId = appId.match(APPLE_REG)[2];
+    console.log(`apple: use country ${country} in url`);
+    STORE.appleStoreCrawler(appId, country);
     process.exit();
   }
 
-  if (params[1].startsWith("=")) {
-    // google: https://play.google.com/store/apps/details?id=com.openwow.win
+  if (GOOGLE_REG.test(appId)) {
+    appId = appId.match(GOOGLE_REG)[1];
     STORE.googlePlayCrawler(appId, country);
-  } else {
-    // apple: https://apps.apple.com/jp/app/id1472822892#?platform=iphone
-    // apple: https://apps.apple.com/jp/app/id1472822892#?platform=ipad
-    STORE.appleStoreCrawler(appId, country);
+    process.exit();
   }
+
+  console.log("not a valid url ", appId);
+  process.exit();
+}
+
+// 为apple app id
+if (appId.startsWith("id")) {
+  STORE.appleStoreCrawler(appId, country);
 } else {
-  // 为apple app id
-  if (appId.startsWith("id")) {
-    STORE.appleStoreCrawler(appId, country);
-  } else {
-    // 为包名
-    STORE.googlePlayCrawler(appId, country);
-  }
+  // 为包名
+  STORE.googlePlayCrawler(appId, country);
 }
