@@ -10,7 +10,7 @@ ts-node >= 8.10.2
 
 ```sh
 npm install -g ts-node
-npm install
+PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors npm install
 ```
 
 # 使用
