@@ -4,6 +4,7 @@
  * Created Date:   2020-08-12 11:43
  */
 import { devices, launch, LaunchOptions, Page } from "puppeteer";
+import { mkdir } from "fs";
 
 const inch5 = devices["Nexus 7"];
 const inch6 = devices["Nexus 7"];
@@ -14,15 +15,21 @@ const run = async (url: string, country: string, config: LaunchOptions) => {
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(60000);
 
-  await runInDevice(page, devices["Pixel 2"], url);
-  await runInDevice(page, devices["Pixel 2"], url);
-  await runInDevice(page, devices["Pixel 2"], url);
-  await runInDevice(page, devices["Pixel 2"], url);
+  await runInDevice(page, devices["Pixel 2"], url, "5.5");
+  // await runInDevice(page, devices["Pixel 2"], url);
+  // await runInDevice(page, devices["Pixel 2"], url);
+  // await runInDevice(page, devices["Pixel 2"], url);
 
   await browser.close();
 };
 
-const runInDevice = async (page: Page, phone: devices.Device, url: string) => {
+const runInDevice = async (
+  page: Page,
+  phone: devices.Device,
+  url: string,
+  folder: string
+) => {
+  // 模拟设备
   await page.emulate(phone);
 
   try {
@@ -62,16 +69,33 @@ const runInDevice = async (page: Page, phone: devices.Device, url: string) => {
     name = name.split("\n")[0];
     name = name.trim();
 
+    // 建立文件夹
+    mkdir(
+      `${__dirname}/../images/apple/${name}/${folder}`,
+      { recursive: true },
+      (err, path) => {
+        if (err) {
+          console.log(err);
+          process.exit();
+        }
+      }
+    );
+
     // 下载图片
     for (let i = 0; i < imgs.length; i++) {
       await imgs[i].screenshot({
-        path: `./images/apple/${name}/233/${i + 1}.png`,
+        path: `./images/apple/${name}/${folder}/${i + 1}.png`,
+        omitBackground: true,
       });
     }
 
-    // 点击切换ipad标签
-    page.tap("a.link.link--no-decoration.ember-view");
+    // 下载图标
+    await icon.screenshot({
+      path: `./images/apple/${name}/${folder}/icon.png`,
+      omitBackground: true,
+    });
   } catch (error) {
+    console.log(`${url} error:\n`);
     console.log(error);
   }
 };
