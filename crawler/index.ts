@@ -31,7 +31,4 @@ const appleStoreCrawler = async (
   await apple(url, country, proxy);
 };
 
-export default {
-  googlePlayCrawler,
-  appleStoreCrawler,
-};
+export { googlePlayCrawler, appleStoreCrawler };

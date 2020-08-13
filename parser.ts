@@ -4,7 +4,7 @@
  * Created Date:   2020-08-12 14:39
  */
 // 区分商店类别
-import STORE from "./crawler/index";
+import { googlePlayCrawler, appleStoreCrawler } from "./crawler/index";
 
 interface IArgs {
   app: string;
@@ -77,10 +77,10 @@ const parse = (): [Function, string, string, string] => {
       country = appId.match(APPLE_REG)[1];
       appId = appId.match(APPLE_REG)[2];
       console.log(`apple: use country ${country} in url`);
-      executer = STORE.appleStoreCrawler;
+      executer = appleStoreCrawler;
     } else if (GOOGLE_REG.test(appId)) {
       appId = appId.match(GOOGLE_REG)[1];
-      executer = STORE.googlePlayCrawler;
+      executer = googlePlayCrawler;
     } else {
       console.log("not a valid url ", appId);
       process.exit();
@@ -89,10 +89,10 @@ const parse = (): [Function, string, string, string] => {
 
   // 为apple app id
   if (appId.startsWith("id")) {
-    executer = STORE.appleStoreCrawler;
+    executer = appleStoreCrawler;
   } else {
     // 为包名
-    executer = STORE.googlePlayCrawler;
+    executer = googlePlayCrawler;
   }
 
   // 代理配置

@@ -4,30 +4,14 @@
  * Created Date:   2020-08-12 11:43
  */
 import { devices, launch, LaunchOptions, Page } from "puppeteer";
-import { mkdir, createWriteStream } from "fs";
-import axios, { AxiosError } from "axios-https-proxy-fix";
+import { mkdir } from "fs";
+import { configAxios, download } from "./downloader";
+
 // todo 调整设备，检查对应dom元素，手机访问下没有ipad按钮
 // 设备: 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
 const MyDevices = {
   phone: devices["Pixel 2 XL"],
   desktop: devices["Pixel 2 XL landscape"],
-};
-
-// 下载图片资源
-const download = (url: string, path: string) => {
-  axios({
-    method: "get",
-    url,
-    responseType: "stream",
-  })
-    .then((res) => {
-      res.data.pipe(createWriteStream(path));
-      console.log(url, "done");
-    })
-    .catch((err: AxiosError) => {
-      console.log(url, "error");
-      console.log(err.message);
-    });
 };
 
 // 浏览器开始运行
@@ -162,17 +146,8 @@ export default async (url: string, country: string, proxy: string) => {
   };
 
   if (proxy) {
-    const params = proxy.split(":");
-    const host = params[1].replace(/\/\//, ""); // 去http头
-    const port = parseInt(params[2]);
-    // 设置下载器代理
-    axios.defaults.proxy = {
-      host,
-      port,
-    };
-    axios.defaults.headers["User-Agent"] =
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
-    console.log(`with proxy: ${host}:${port}`);
+    configAxios(proxy);
+    console.log(`with proxy: ${proxy}`);
   }
 
   await run(url, country, config);
