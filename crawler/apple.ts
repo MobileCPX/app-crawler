@@ -6,19 +6,28 @@
 import { devices, launch, LaunchOptions, Page } from "puppeteer";
 import { mkdir } from "fs";
 
-const inch5 = devices["Nexus 7"];
-const inch6 = devices["Nexus 7"];
-
 // 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
-const run = async (url: string, country: string, config: LaunchOptions) => {
+const MyDevices = {
+  "5.5": devices["Nexus 6"],
+  "6.5": devices["Pixel 2 XL"],
+  // ipad2: devices["Nexus 7"],
+  // ipad3: devices["Nexus 7"],
+};
+
+const run = async (url: string, config: LaunchOptions) => {
   const browser = await launch(config);
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(60000);
 
-  await runInDevice(page, devices["Pixel 2"], url, "5.5");
-  // await runInDevice(page, devices["Pixel 2"], url);
-  // await runInDevice(page, devices["Pixel 2"], url);
-  // await runInDevice(page, devices["Pixel 2"], url);
+  for (const key in MyDevices) {
+    await runInDevice(page, MyDevices[key], url, key);
+    await runInDevice(
+      page,
+      MyDevices[key],
+      url + "#?platform=ipad",
+      key + "pad"
+    );
+  }
 
   await browser.close();
 };
@@ -43,10 +52,17 @@ const runInDevice = async (
       }
     );
     // 等待截图展示加载图片
-    await page.waitForSelector("li > picture > img", {
-      visible: true,
-      timeout: 0,
-    });
+    await page.waitForSelector(
+      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
+      {
+        visible: true,
+        timeout: 60000,
+      }
+    );
+
+    await page.waitForSelector(
+      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img"
+    );
 
     // 选取图片
     const imgs = await page.$$(
@@ -119,5 +135,5 @@ export default async (url: string, country: string, proxy: string) => {
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(url, country, config);
+  await run(url, config);
 };
