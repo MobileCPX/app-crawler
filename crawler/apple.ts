@@ -4,38 +4,48 @@
  * Created Date:   2020-08-12 11:43
  */
 import { devices, launch, LaunchOptions, Page } from "puppeteer";
-import { mkdir } from "fs";
+import { mkdir, createWriteStream } from "fs";
+import { request } from "https";
 
-// 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
+// 设备: 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
 const MyDevices = {
-  "5.5": devices["Nexus 6"],
-  "6.5": devices["Pixel 2 XL"],
-  // ipad2: devices["Nexus 7"],
-  // ipad3: devices["Nexus 7"],
+  phone: devices["Pixel 2 XL"],
+  desktop: devices["Pixel 2 XL landscape"],
 };
 
-const run = async (url: string, config: LaunchOptions) => {
+// 下载图片资源
+const download = (url: string, path: string) => {
+  const req = request(url, (res) => {
+    res.pipe(createWriteStream(path));
+  });
+  req.on("error", (err: Error) => {
+    console.log(url, "error");
+    console.log(err);
+  });
+  req.end(() => {
+    console.log(url, "done");
+  });
+};
+
+// 浏览器开始运行
+const run = async (url: string, country: string, config: LaunchOptions) => {
   const browser = await launch(config);
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(60000);
 
   for (const key in MyDevices) {
-    await runInDevice(page, MyDevices[key], url, key);
-    await runInDevice(
-      page,
-      MyDevices[key],
-      url + "#?platform=ipad",
-      key + "pad"
-    );
+    await runInDevice(page, MyDevices[key], url, country, key);
   }
 
   await browser.close();
 };
 
+// 切换设备打开页面解析
 const runInDevice = async (
   page: Page,
   phone: devices.Device,
   url: string,
+  country: string,
   folder: string
 ) => {
   // 模拟设备
@@ -45,34 +55,14 @@ const runInDevice = async (
     await page.goto(url);
     // 等待app icon
     await page.waitForSelector(
-      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img",
-      {
-        visible: true,
-        timeout: 60000,
-      }
+      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img"
     );
     // 等待截图展示加载图片
     await page.waitForSelector(
-      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
-      {
-        visible: true,
-        timeout: 60000,
-      }
-    );
-
-    await page.waitForSelector(
-      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img"
-    );
-
-    // 选取图片
-    const imgs = await page.$$(
       "div.we-screenshot-viewer__screenshots > ul > li > picture > img"
     );
-
-    // 获取图标
-    const icon = await page.$(
-      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img"
-    );
+    // 稍等一会
+    await page.waitFor(500);
 
     // 获取app标题
     let name = await page.$eval(
@@ -87,9 +77,9 @@ const runInDevice = async (
 
     // 建立文件夹
     mkdir(
-      `${__dirname}/../images/apple/${name}/${folder}`,
+      `${__dirname}/../images/apple/${name}/${country}/${folder}`,
       { recursive: true },
-      (err, path) => {
+      (err) => {
         if (err) {
           console.log(err);
           process.exit();
@@ -97,19 +87,56 @@ const runInDevice = async (
       }
     );
 
+    // 获取图片链接
+    const imgs = await page.$$eval(
+      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
+      (imgs) => imgs.map((img) => img.getAttribute("src"))
+    );
+
+    // 获取图标链接
+    const icon = await page.$eval(
+      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img",
+      (icon) => icon.getAttribute("src")
+    );
+
     // 下载图片
     for (let i = 0; i < imgs.length; i++) {
-      await imgs[i].screenshot({
-        path: `./images/apple/${name}/${folder}/${i + 1}.png`,
-        omitBackground: true,
-      });
+      download(
+        imgs[i],
+        `${__dirname}/../images/apple/${name}/${country}/${folder}/${i + 1}.png`
+      );
     }
-
     // 下载图标
-    await icon.screenshot({
-      path: `./images/apple/${name}/${folder}/icon.png`,
-      omitBackground: true,
-    });
+    download(
+      icon,
+      `${__dirname}/../images/apple/${name}/${country}/${folder}/icon.png`
+    );
+
+    // 点击ipad选项
+    await page.tap("ul.gallery-nav__items > li:nth-child(2) >a");
+    // 等待截图展示加载图片
+    await page.waitForSelector(
+      "div.we-screenshot-viewer__screenshots > ul > li > picture > img"
+    );
+
+    // 稍等一会
+    await page.waitFor(500);
+
+    // 获取图片链接
+    const ipadImgs = await page.$$eval(
+      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
+      (imgs) => imgs.map((img) => img.getAttribute("src"))
+    );
+
+    // 下载ipad图片
+    for (let i = 0; i < ipadImgs.length; i++) {
+      download(
+        ipadImgs[i],
+        `${__dirname}/../images/apple/${name}/${country}/${folder}/ipad${
+          i + 1
+        }.png`
+      );
+    }
   } catch (error) {
     console.log(`${url} error:\n`);
     console.log(error);
@@ -135,5 +162,5 @@ export default async (url: string, country: string, proxy: string) => {
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(url, config);
+  await run(url, country, config);
 };
