@@ -26,7 +26,7 @@ const appleStoreCrawler = async (
   country: string,
   proxy: string
 ) => {
-  const url = `https://itunes.apple.com/${country}/app/${appId}`;
+  const url = `https://apps.apple.com/${country}/app/${appId}`;
   console.log(`apple: ${url}`);
   await apple(url, country, proxy);
 };
