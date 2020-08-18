@@ -26,6 +26,7 @@ const run = async (url: string, country: string, config: LaunchOptions) => {
 };
 
 // 获取图片链接
+// fixme headless下少了一张
 const getImgs = async (page: Page): Promise<string[]> => {
   // data-src="https://lh3.googleusercontent.com/AK8oyPtyCSv0wsNmY2cdsQQaGSYwbE8YABwdv4dTyY3o7inGZBFIk0NHgPkf38Zv_w=w720-h310"
   // data-srcset="https://lh3.googleusercontent.com/AK8oyPtyCSv0wsNmY2cdsQQaGSYwbE8YABwdv4dTyY3o7inGZBFIk0NHgPkf38Zv_w=w1440-h620 2x"
@@ -108,6 +109,7 @@ const runInDevice = async (
       "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > button > img",
       { visible: true }
     );
+
     // 稍等一会
     await page.waitFor(500);
 
@@ -160,6 +162,7 @@ const runInDevice = async (
     }
 
     // 视频地址
+    // todo 下载视频
     console.log(`### ${name} video address: `, await getVideo(page));
   } catch (error) {
     if (error.name && error.name === "TimeoutError") {

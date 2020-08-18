@@ -134,6 +134,8 @@ const runInDevice = async (page: Page, url: string, country: string) => {
         }`
       );
     }
+
+    // todo 如果存在视频
   } catch (error) {
     if (error.name && error.name === "TimeoutError") {
       console.log("timeout, maybe you need a proxy");
