@@ -5,7 +5,7 @@
  */
 import { launch, LaunchOptions, Page } from "puppeteer";
 import { mkdir } from "fs";
-import { configAxios, download } from "./downloader";
+import { configAxios, appleDownload } from "./downloader";
 
 // 浏览器开始运行
 const run = async (url: string, country: string, config: LaunchOptions) => {
@@ -92,7 +92,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     // 下载图片
     for (let i = 0; i < imgs.length; i++) {
       const paths = imgs[i].split("/");
-      download(
+      appleDownload(
         imgs[i],
         `${__dirname}/../images/apple/${name}/${country}/${i + 1}_${
           paths[paths.length - 1]
@@ -103,7 +103,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     // 下载图标
     for (let i = 0; i < icons.length; i++) {
       const paths = icons[i].split("/");
-      download(
+      appleDownload(
         icons[i],
         `${__dirname}/../images/apple/${name}/${country}/icon_${
           paths[paths.length - 1]
@@ -127,7 +127,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     // 下载ipad图片
     for (let i = 0; i < ipadImgs.length; i++) {
       const paths = imgs[i].split("/");
-      download(
+      appleDownload(
         ipadImgs[i],
         `${__dirname}/../images/apple/${name}/${country}/ipad${i + 1}_${
           paths[paths.length - 1]

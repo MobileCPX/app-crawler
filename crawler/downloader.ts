@@ -12,11 +12,32 @@ axios.defaults.headers["User-Agent"] =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
 
 // 下载资源
-const download = (url: string, path: string) => {
+const appleDownload = (url: string, path: string) => {
   axios({
     method: "get",
     url,
     responseType: "stream",
+  })
+    .then((res) => {
+      res.data.pipe(createWriteStream(path));
+      console.log("###", path, "done");
+    })
+    .catch((err: AxiosError) => {
+      console.log("###", path, "\n###", url, "failed");
+      console.log(err.message);
+    });
+};
+
+const googleDownload = (url: string, path: string) => {
+  axios({
+    method: "get",
+    url,
+    responseType: "stream",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1",
+      authority: "lh3.googleusercontent.com",
+    },
   })
     .then((res) => {
       res.data.pipe(createWriteStream(path));
@@ -40,4 +61,4 @@ const configAxios = (proxy: string) => {
   };
 };
 
-export { configAxios, download };
+export { configAxios, appleDownload, googleDownload };
