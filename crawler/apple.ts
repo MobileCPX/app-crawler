@@ -3,16 +3,9 @@
  * Author:         Navi
  * Created Date:   2020-08-12 11:43
  */
-import { devices, launch, LaunchOptions, Page } from "puppeteer";
+import { launch, LaunchOptions, Page } from "puppeteer";
 import { mkdir } from "fs";
 import { configAxios, download } from "./downloader";
-
-// todo 调整设备，检查对应dom元素，手机访问下没有ipad按钮
-// 设备: 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
-const MyDevices = {
-  phone: devices["Pixel 2 XL"],
-  desktop: devices["Pixel 2 XL landscape"],
-};
 
 // 浏览器开始运行
 const run = async (url: string, country: string, config: LaunchOptions) => {
@@ -20,24 +13,43 @@ const run = async (url: string, country: string, config: LaunchOptions) => {
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(60000);
 
-  for (const key in MyDevices) {
-    await runInDevice(page, MyDevices[key], url, country, key);
-  }
+  // 设备: 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
+  await runInDevice(page, url, country);
 
   await browser.close();
 };
 
-// 切换设备打开页面解析
-const runInDevice = async (
-  page: Page,
-  phone: devices.Device,
-  url: string,
-  country: string,
-  folder: string
-) => {
-  // 模拟设备
-  await page.emulate(phone);
+// 获取图片链接
+const getImgs = async (page: Page): Promise<string[]> => {
+  // srcset="https://is4-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/21/12/c8/2112c844-5eff-a3e4-a224-6f9537959c96/e83018c5-f420-4654-ab03-c778fdbe2151__U6392_U884c_U699c_copy_2.png/300x0w.png 1x,https://is4-ssl.mzstatic.com/image/thumb/PurpleSource114/v4/21/12/c8/2112c844-5eff-a3e4-a224-6f9537959c96/e83018c5-f420-4654-ab03-c778fdbe2151__U6392_U884c_U699c_copy_2.png/600x0w.png 2x"
+  return await page.$$eval(
+    "div.we-screenshot-viewer__screenshots > ul > li > picture > source",
+    (imgs) => {
+      let srcs: string[] = [];
+      imgs.forEach((img) => {
+        const srcset = img.getAttribute("srcset");
+        srcs.push(...srcset.replace(/ 2x$/, "").split(" 1x,"));
+      });
+      return srcs;
+    }
+  );
+};
 
+// 获取图标链接
+const getIcons = async (page: Page): Promise<string[]> => {
+  return await page.$eval(
+    "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > source",
+    (icon) => {
+      let srcs: string[] = [];
+      const srcset = icon.getAttribute("srcset");
+      srcs.push(...srcset.replace(/ 2x$/, "").split(" 1x,"));
+      return srcs;
+    }
+  );
+};
+
+// 切换设备打开页面解析
+const runInDevice = async (page: Page, url: string, country: string) => {
   try {
     await page.goto(url);
     // 等待app icon
@@ -64,7 +76,7 @@ const runInDevice = async (
 
     // 建立文件夹
     mkdir(
-      `${__dirname}/../images/apple/${name}/${country}/${folder}`,
+      `${__dirname}/../images/apple/${name}/${country}`,
       { recursive: true },
       (err) => {
         if (err) {
@@ -74,30 +86,30 @@ const runInDevice = async (
       }
     );
 
-    // 获取图片链接
-    const imgs = await page.$$eval(
-      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
-      (imgs) => imgs.map((img) => img.getAttribute("src"))
-    );
-
-    // 获取图标链接
-    const icon = await page.$eval(
-      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img",
-      (icon) => icon.getAttribute("src")
-    );
+    const imgs = await getImgs(page);
+    const icons = await getIcons(page);
 
     // 下载图片
     for (let i = 0; i < imgs.length; i++) {
+      const paths = imgs[i].split("/");
       download(
         imgs[i],
-        `${__dirname}/../images/apple/${name}/${country}/${folder}/${i + 1}.png`
+        `${__dirname}/../images/apple/${name}/${country}/${i + 1}_${
+          paths[paths.length - 1]
+        }`
       );
     }
+
     // 下载图标
-    download(
-      icon,
-      `${__dirname}/../images/apple/${name}/${country}/${folder}/icon.png`
-    );
+    for (let i = 0; i < icons.length; i++) {
+      const paths = icons[i].split("/");
+      download(
+        icons[i],
+        `${__dirname}/../images/apple/${name}/${country}/icon_${
+          paths[paths.length - 1]
+        }`
+      );
+    }
 
     // 点击ipad选项
     await page.tap("ul.gallery-nav__items > li:nth-child(2) >a");
@@ -109,28 +121,27 @@ const runInDevice = async (
     // 稍等一会
     await page.waitFor(500);
 
-    // 获取图片链接
-    const ipadImgs = await page.$$eval(
-      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
-      (imgs) => imgs.map((img) => img.getAttribute("src"))
-    );
+    // 获取ipad图片链接
+    const ipadImgs = await getImgs(page);
 
     // 下载ipad图片
     for (let i = 0; i < ipadImgs.length; i++) {
+      const paths = imgs[i].split("/");
       download(
         ipadImgs[i],
-        `${__dirname}/../images/apple/${name}/${country}/${folder}/ipad${
-          i + 1
-        }.png`
+        `${__dirname}/../images/apple/${name}/${country}/ipad${i + 1}_${
+          paths[paths.length - 1]
+        }`
       );
     }
   } catch (error) {
-    console.log(`${url} error:\n`);
+    console.log(`### ${url} error:\n`);
     console.log(error);
   }
 };
 
 export default async (url: string, country: string, proxy: string) => {
+  // chrome设置
   const config = {
     headless: true,
     ignoreHTTPSErrors: true,
@@ -145,6 +156,7 @@ export default async (url: string, country: string, proxy: string) => {
     ignoreDefaultArgs: ["--enable-automation"],
   };
 
+  // 设置下载代理
   if (proxy) {
     configAxios(proxy);
     console.log(`with proxy: ${proxy}`);

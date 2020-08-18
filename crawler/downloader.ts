@@ -20,10 +20,10 @@ const download = (url: string, path: string) => {
   })
     .then((res) => {
       res.data.pipe(createWriteStream(path));
-      console.log(url, "done");
+      console.log("###", path, "done");
     })
     .catch((err: AxiosError) => {
-      console.log(url, "error");
+      console.log("###", path, "\n###", url, "failed");
       console.log(err.message);
     });
 };
