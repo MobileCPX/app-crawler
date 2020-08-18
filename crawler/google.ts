@@ -3,7 +3,7 @@
  * Author:         Navi
  * Created Date:   2020-08-12 11:43
  */
-import { launch, LaunchOptions, Page } from "puppeteer";
+import { launch, LaunchOptions, Page, devices } from "puppeteer";
 import { mkdir } from "fs";
 import { configAxios, googleDownload } from "./downloader";
 
@@ -11,9 +11,14 @@ import { configAxios, googleDownload } from "./downloader";
 const run = async (url: string, country: string, config: LaunchOptions) => {
   const browser = await launch(config);
   const page = await browser.newPage();
+  page.emulate(devices["iPad landscape"]);
+
   const imgPage = await browser.newPage(); // 用来访问图片截图
   const iconPage = await browser.newPage(); // 用来访问图片截图
+
   page.setDefaultNavigationTimeout(60000);
+  imgPage.setDefaultNavigationTimeout(60000);
+  iconPage.setDefaultNavigationTimeout(60000);
 
   await runInDevice(page, imgPage, iconPage, url, country);
 
@@ -21,7 +26,6 @@ const run = async (url: string, country: string, config: LaunchOptions) => {
 };
 
 // 获取图片链接
-// todo 为空，似乎未获取到元素
 const getImgs = async (page: Page): Promise<string[]> => {
   // data-src="https://lh3.googleusercontent.com/AK8oyPtyCSv0wsNmY2cdsQQaGSYwbE8YABwdv4dTyY3o7inGZBFIk0NHgPkf38Zv_w=w720-h310"
   // data-srcset="https://lh3.googleusercontent.com/AK8oyPtyCSv0wsNmY2cdsQQaGSYwbE8YABwdv4dTyY3o7inGZBFIk0NHgPkf38Zv_w=w1440-h620 2x"
@@ -30,20 +34,16 @@ const getImgs = async (page: Page): Promise<string[]> => {
     "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > button > img",
     (imgs) => {
       let srcs: string[] = [];
-
-      console.log(imgs);
-
       imgs.forEach((img) => {
-        let srcs: string[] = [];
         let src = img.getAttribute("src");
         let srcset = img.getAttribute("srcset");
 
         // 可能有两种标签属性
-        if (!src) {
+        if (src === "") {
           src = img.getAttribute("data-src");
         }
 
-        if (!srcset) {
+        if (srcset === "") {
           srcset = img.getAttribute("data-srcset");
         }
 
@@ -159,10 +159,11 @@ const runInDevice = async (
       );
     }
 
+    // 视频地址
     console.log(`### ${name} video address: `, await getVideo(page));
   } catch (error) {
     if (error.name && error.name === "TimeoutError") {
-      console.log("timeout, maybe you need set a proxy");
+      console.log("timeout, maybe you need a proxy");
     }
     console.log(`### ${url} error:\n`);
     console.log(error);

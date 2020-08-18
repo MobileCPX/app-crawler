@@ -136,7 +136,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     }
   } catch (error) {
     if (error.name && error.name === "TimeoutError") {
-      console.log("timeout, maybe you need set a proxy");
+      console.log("timeout, maybe you need a proxy");
     }
     console.log(`### ${url} error:\n`);
     console.log(error);

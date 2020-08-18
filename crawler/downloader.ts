@@ -30,6 +30,7 @@ const appleDownload = (url: string, path: string) => {
 
 // google 图片为webp格式，使用截图方法
 const googleDownload = async (page: Page, url: string, path: string) => {
+  console.log("downloading", url);
   try {
     await page.goto(url);
     await page.waitForSelector("img", { visible: true });
