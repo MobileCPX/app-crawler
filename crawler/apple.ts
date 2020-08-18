@@ -135,24 +135,31 @@ const runInDevice = async (page: Page, url: string, country: string) => {
       );
     }
   } catch (error) {
+    if (error.name && error.name === "TimeoutError") {
+      console.log("timeout, maybe you need set a proxy");
+    }
     console.log(`### ${url} error:\n`);
     console.log(error);
   }
 };
 
 export default async (url: string, country: string, proxy: string) => {
+  let args: string[] = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--incognito",
+  ];
+
+  if (proxy) {
+    args.push(`--proxy-server=${proxy}`);
+  }
+
   // chrome设置
   const config = {
     headless: true,
     ignoreHTTPSErrors: true,
     devTools: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--incognito",
-      `--proxy-server=${proxy}`,
-      // `--lang=${info.lang}`
-    ],
+    args,
     ignoreDefaultArgs: ["--enable-automation"],
   };
 

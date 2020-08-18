@@ -56,7 +56,7 @@ const parse = (): [Function, string, string, string] => {
   if (ARGS.country) {
     country = ARGS.country.toLowerCase();
   } else {
-    console.log("set default value 'us' for country");
+    // 默认使用us
     country = "us";
   }
 

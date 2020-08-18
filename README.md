@@ -17,7 +17,7 @@ PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors npm install
 
 ```sh
 # for apple app store
-npm run start app=id1472822892 [country=us proxy=http://localhost:8001]
+npm run start app=id1472822892 [country=us proxy=localhost:8001]
 # for google play
-npm run start app=com.openwow.win [country=us proxy=http://localhost:8001]
+npm run start app=com.openwow.win [country=us proxy=localhost:8001]
 ```
