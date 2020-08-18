@@ -158,7 +158,7 @@ export default async (url: string, country: string, proxy: string) => {
   const config = {
     headless: true,
     ignoreHTTPSErrors: true,
-    devTools: true,
+    devTools: false,
     args,
     ignoreDefaultArgs: ["--enable-automation"],
   };

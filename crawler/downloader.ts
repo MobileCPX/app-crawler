@@ -5,7 +5,7 @@
  */
 import axios, { AxiosError } from "axios-https-proxy-fix";
 import { createWriteStream } from "fs";
-import { devices } from "puppeteer";
+import { Page } from "puppeteer";
 
 // 设置header
 axios.defaults.headers["User-Agent"] =
@@ -28,25 +28,22 @@ const appleDownload = (url: string, path: string) => {
     });
 };
 
-const googleDownload = (url: string, path: string) => {
-  axios({
-    method: "get",
-    url,
-    responseType: "stream",
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1",
-      authority: "lh3.googleusercontent.com",
-    },
-  })
-    .then((res) => {
-      res.data.pipe(createWriteStream(path));
-      console.log("###", path, "done");
-    })
-    .catch((err: AxiosError) => {
-      console.log("###", path, "\n###", url, "failed");
-      console.log(err.message);
+// google 图片为webp格式，使用截图方法
+const googleDownload = async (page: Page, url: string, path: string) => {
+  try {
+    await page.goto(url);
+    await page.waitForSelector("img", { visible: true });
+    const img = await page.$("img");
+    await img.screenshot({
+      path,
+      omitBackground: true,
     });
+
+    console.log("###", path, "done");
+  } catch (err) {
+    console.log("###", path, "\n###", url, "failed");
+    console.log(err.message);
+  }
 };
 
 // 基础设置

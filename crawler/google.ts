@@ -11,25 +11,42 @@ import { configAxios, googleDownload } from "./downloader";
 const run = async (url: string, country: string, config: LaunchOptions) => {
   const browser = await launch(config);
   const page = await browser.newPage();
+  const imgPage = await browser.newPage(); // 用来访问图片截图
+  const iconPage = await browser.newPage(); // 用来访问图片截图
   page.setDefaultNavigationTimeout(60000);
 
-  await runInDevice(page, url, country);
+  await runInDevice(page, imgPage, iconPage, url, country);
 
   await browser.close();
 };
 
 // 获取图片链接
+// todo 为空，似乎未获取到元素
 const getImgs = async (page: Page): Promise<string[]> => {
-  // src="https://lh3.googleusercontent.com/rI4Zoy6Yf4XzTeobxuEuXlP2lih-PvBVuDILY0CyeUpvkZZ5ai_u13DYgOopkk0CwtE=w720-h310-rw"
+  // data-src="https://lh3.googleusercontent.com/AK8oyPtyCSv0wsNmY2cdsQQaGSYwbE8YABwdv4dTyY3o7inGZBFIk0NHgPkf38Zv_w=w720-h310"
+  // data-srcset="https://lh3.googleusercontent.com/AK8oyPtyCSv0wsNmY2cdsQQaGSYwbE8YABwdv4dTyY3o7inGZBFIk0NHgPkf38Zv_w=w1440-h620 2x"
   // srcset="https://lh3.googleusercontent.com/rI4Zoy6Yf4XzTeobxuEuXlP2lih-PvBVuDILY0CyeUpvkZZ5ai_u13DYgOopkk0CwtE=w1440-h620-rw 2x"
   return await page.$$eval(
     "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > button > img",
     (imgs) => {
       let srcs: string[] = [];
+
+      console.log(imgs);
+
       imgs.forEach((img) => {
         let srcs: string[] = [];
-        const src = img.getAttribute("src");
-        const srcset = img.getAttribute("srcset");
+        let src = img.getAttribute("src");
+        let srcset = img.getAttribute("srcset");
+
+        // 可能有两种标签属性
+        if (!src) {
+          src = img.getAttribute("data-src");
+        }
+
+        if (!srcset) {
+          srcset = img.getAttribute("data-srcset");
+        }
+
         srcs.push(src);
         srcs.push(srcset.replace(/ 2x$/, ""));
       });
@@ -72,16 +89,24 @@ const getVideo = async (page: Page): Promise<string> => {
 };
 
 // 切换设备打开页面解析
-const runInDevice = async (page: Page, url: string, country: string) => {
+const runInDevice = async (
+  page: Page,
+  imgPage: Page,
+  iconPage: Page,
+  url: string,
+  country: string
+) => {
   try {
     await page.goto(url);
     // 等待google icon
     await page.waitForSelector(
-      "body >  div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(1) > div > div > div > img"
+      "body >  div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(1) > div > div > div > img",
+      { visible: true }
     );
     // 等待截图展示加载图片
     await page.waitForSelector(
-      "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > button > img"
+      "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > button > img",
+      { visible: true }
     );
     // 稍等一会
     await page.waitFor(500);
@@ -113,7 +138,8 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     // 下载图片
     for (let i = 0; i < imgs.length; i++) {
       const paths = imgs[i].split("=");
-      googleDownload(
+      await googleDownload(
+        imgPage,
         imgs[i],
         `${__dirname}/../images/google/${name}/${country}/${i + 1}_${
           paths[paths.length - 1]
@@ -124,7 +150,8 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     // 下载图标
     for (let i = 0; i < icons.length; i++) {
       const paths = icons[i].split("=");
-      googleDownload(
+      await googleDownload(
+        iconPage,
         icons[i],
         `${__dirname}/../images/google/${name}/${country}/icon_${
           paths[paths.length - 1]
@@ -157,7 +184,7 @@ export default async (url: string, country: string, proxy: string) => {
   const config = {
     headless: true,
     ignoreHTTPSErrors: true,
-    devTools: true,
+    devTools: false,
     args,
     ignoreDefaultArgs: ["--enable-automation"],
   };
