@@ -111,7 +111,7 @@ const runInDevice = async (
     );
 
     // 稍等一会
-    await page.waitFor(500);
+    await page.waitFor(500000);
 
     // 获取app标题
     let name = await page.$eval(
@@ -184,11 +184,22 @@ export default async (url: string, country: string, proxy: string) => {
     args.push(`--proxy-server=${proxy}`);
   }
 
+  // 语言区域
+  // todo more
+  switch (country) {
+    case "jp":
+      url += `&hl=ja`;
+      break;
+
+    default:
+      break;
+  }
+
   // chrome设置
   const config = {
-    headless: true,
+    headless: false,
     ignoreHTTPSErrors: true,
-    devTools: false,
+    devTools: true,
     args,
     ignoreDefaultArgs: ["--enable-automation"],
   };
