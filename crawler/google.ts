@@ -163,6 +163,7 @@ const runInDevice = async (
 
     // 视频地址
     // todo 下载视频
+    // youtube-dl --proxy "http://localhost:8001" url
     console.log(`### ${name} video address: `, await getVideo(page));
   } catch (error) {
     if (error.name && error.name === "TimeoutError") {
