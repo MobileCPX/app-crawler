@@ -6,6 +6,7 @@
 import axios, { AxiosError } from "axios-https-proxy-fix";
 import { createWriteStream } from "fs";
 import { Page } from "puppeteer";
+import { exec } from "child_process";
 
 // 设置header
 axios.defaults.headers["User-Agent"] =
@@ -46,6 +47,41 @@ const googleDownload = async (page: Page, url: string, path: string) => {
   }
 };
 
+// youtube视频下载
+const youtubeDownload = (videoUrl: string, dirPath: string, proxy: string) => {
+  if (!videoUrl) {
+    console.log(`### no video address`);
+    return;
+  }
+
+  console.log(`### downloading ${videoUrl} to ${dirPath}`);
+
+  let cmd: string;
+  if (proxy) {
+    // youtube-dl --proxy "http://localhost:8001" url
+    cmd = `youtube-dl --proxy "${proxy}" "${videoUrl}"`;
+  } else {
+    cmd = `youtube-dl "${videoUrl}"`;
+  }
+
+  exec(cmd, { cwd: dirPath }, (err, stdout, stderr) => {
+    if (err) {
+      console.log(`### download ${videoUrl} failed`);
+      console.log(err);
+      return;
+    }
+
+    if (stderr) {
+      console.log(`### download ${videoUrl} failed`);
+      console.log(stderr);
+      return;
+    }
+
+    console.log(`### download ${videoUrl} success`);
+    console.log(stdout);
+  });
+};
+
 // 基础设置
 const configAxios = (proxy: string) => {
   const params = proxy.split(":");
@@ -58,4 +94,4 @@ const configAxios = (proxy: string) => {
   };
 };
 
-export { configAxios, appleDownload, googleDownload };
+export { configAxios, appleDownload, googleDownload, youtubeDownload };

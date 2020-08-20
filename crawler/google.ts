@@ -4,11 +4,17 @@
  * Created Date:   2020-08-12 11:43
  */
 import { launch, LaunchOptions, Page, devices } from "puppeteer";
+import { googleDownload, youtubeDownload } from "./downloader";
 import { mkdir } from "fs";
-import { configAxios, googleDownload } from "./downloader";
+import { dirname } from "path";
 
 // 浏览器开始运行
-const run = async (url: string, country: string, config: LaunchOptions) => {
+const run = async (
+  url: string,
+  country: string,
+  proxy: string,
+  config: LaunchOptions
+) => {
   const browser = await launch(config);
   const page = await browser.newPage();
   page.emulate(devices["iPad landscape"]);
@@ -20,8 +26,7 @@ const run = async (url: string, country: string, config: LaunchOptions) => {
   imgPage.setDefaultNavigationTimeout(60000);
   iconPage.setDefaultNavigationTimeout(60000);
 
-  await runInDevice(page, imgPage, iconPage, url, country);
-
+  await runInDevice(page, imgPage, iconPage, url, country, proxy);
   await browser.close();
 };
 
@@ -89,13 +94,14 @@ const getVideo = async (page: Page): Promise<string> => {
   return "";
 };
 
-// 切换设备打开页面解析
+// 打开页面解析
 const runInDevice = async (
   page: Page,
   imgPage: Page,
   iconPage: Page,
   url: string,
-  country: string
+  country: string,
+  proxy: string
 ) => {
   try {
     await page.goto(url);
@@ -111,7 +117,7 @@ const runInDevice = async (
     );
 
     // 稍等一会
-    await page.waitFor(500000);
+    await page.waitFor(500);
 
     // 获取app标题
     let name = await page.$eval(
@@ -123,16 +129,13 @@ const runInDevice = async (
     name = name.trim();
 
     // 建立文件夹
-    mkdir(
-      `${__dirname}/../images/google/${name}/${country}`,
-      { recursive: true },
-      (err) => {
-        if (err) {
-          console.log(err);
-          process.exit();
-        }
+    const basePath = `${dirname(__dirname)}/images/google/${name}/${country}`;
+    mkdir(basePath, { recursive: true }, (err) => {
+      if (err) {
+        console.log(err);
+        process.exit();
       }
-    );
+    });
 
     const imgs = await getImgs(page);
     const icons = await getIcons(page);
@@ -143,9 +146,7 @@ const runInDevice = async (
       await googleDownload(
         imgPage,
         imgs[i],
-        `${__dirname}/../images/google/${name}/${country}/${i + 1}_${
-          paths[paths.length - 1]
-        }.png`
+        `${basePath}/${i + 1}_${paths[paths.length - 1]}.png`
       );
     }
 
@@ -155,16 +156,12 @@ const runInDevice = async (
       await googleDownload(
         iconPage,
         icons[i],
-        `${__dirname}/../images/google/${name}/${country}/icon_${
-          paths[paths.length - 1]
-        }.png`
+        `${__dirname}/icon_${paths[paths.length - 1]}.png`
       );
     }
 
-    // 视频地址
-    // todo 下载视频
-    // youtube-dl --proxy "http://localhost:8001" url
-    console.log(`### ${name} video address: `, await getVideo(page));
+    // 视频下载
+    youtubeDownload(await getVideo(page), basePath, proxy);
   } catch (error) {
     if (error.name && error.name === "TimeoutError") {
       console.log("timeout, maybe you need a proxy");
@@ -186,30 +183,28 @@ export default async (url: string, country: string, proxy: string) => {
   }
 
   // 语言区域
-  // todo more
   switch (country) {
     case "jp":
       url += `&hl=ja`;
       break;
 
     default:
-      break;
+      url += `&hl=${country}`;
   }
 
   // chrome设置
   const config = {
-    headless: false,
+    headless: true,
     ignoreHTTPSErrors: true,
-    devTools: true,
+    devTools: false,
     args,
     ignoreDefaultArgs: ["--enable-automation"],
   };
 
   // 设置下载代理
   if (proxy) {
-    configAxios(proxy);
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(url, country, config);
+  await run(url, country, proxy, config);
 };

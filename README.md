@@ -17,6 +17,8 @@ PUPPETEER_DOWNLOAD_HOST=https://npm.taobao.org/mirrors npm install
 
 # 使用
 
+下载对应地区信息需要设置代理
+
 ```sh
 # for apple app store
 npm run start app=id1472822892 [country=us proxy=localhost:8001]
