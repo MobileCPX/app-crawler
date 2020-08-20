@@ -129,7 +129,9 @@ const runInDevice = async (
     name = name.trim();
 
     // 建立文件夹
-    const basePath = `${dirname(__dirname)}/images/google/${name}/${country}`;
+    const basePath = `${dirname(
+      __dirname
+    )}/downloads/google/${name}/${country}`;
     mkdir(basePath, { recursive: true }, (err) => {
       if (err) {
         console.log(err);
@@ -156,7 +158,7 @@ const runInDevice = async (
       await googleDownload(
         iconPage,
         icons[i],
-        `${__dirname}/icon_${paths[paths.length - 1]}.png`
+        `${basePath}/icon_${paths[paths.length - 1]}.png`
       );
     }
 

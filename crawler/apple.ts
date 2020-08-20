@@ -5,6 +5,7 @@
  */
 import { launch, LaunchOptions, Page } from "puppeteer";
 import { mkdir } from "fs";
+import { dirname } from "path";
 import { configAxios, appleDownload } from "./downloader";
 
 // 浏览器开始运行
@@ -75,16 +76,13 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     name = name.trim();
 
     // 建立文件夹
-    mkdir(
-      `${__dirname}/../images/apple/${name}/${country}`,
-      { recursive: true },
-      (err) => {
-        if (err) {
-          console.log(err);
-          process.exit();
-        }
+    const basePath = `${dirname(__dirname)}/downloads/apple/${name}/${country}`;
+    mkdir(basePath, { recursive: true }, (err) => {
+      if (err) {
+        console.log(err);
+        process.exit();
       }
-    );
+    });
 
     const imgs = await getImgs(page);
     const icons = await getIcons(page);
@@ -92,23 +90,13 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     // 下载图片
     for (let i = 0; i < imgs.length; i++) {
       const paths = imgs[i].split("/");
-      appleDownload(
-        imgs[i],
-        `${__dirname}/../images/apple/${name}/${country}/${i + 1}_${
-          paths[paths.length - 1]
-        }`
-      );
+      appleDownload(imgs[i], `${basePath}/${i + 1}_${paths[paths.length - 1]}`);
     }
 
     // 下载图标
     for (let i = 0; i < icons.length; i++) {
       const paths = icons[i].split("/");
-      appleDownload(
-        icons[i],
-        `${__dirname}/../images/apple/${name}/${country}/icon_${
-          paths[paths.length - 1]
-        }`
-      );
+      appleDownload(icons[i], `${basePath}/icon_${paths[paths.length - 1]}`);
     }
 
     // 点击ipad选项
@@ -129,9 +117,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
       const paths = imgs[i].split("/");
       appleDownload(
         ipadImgs[i],
-        `${__dirname}/../images/apple/${name}/${country}/ipad${i + 1}_${
-          paths[paths.length - 1]
-        }`
+        `${basePath}/ipad${i + 1}_${paths[paths.length - 1]}`
       );
     }
 
