@@ -10,6 +10,7 @@ import { dirname } from "path";
 
 // 浏览器开始运行
 const run = async (
+  appId:string,
   url: string,
   country: string,
   proxy: string,
@@ -26,7 +27,7 @@ const run = async (
   imgPage.setDefaultNavigationTimeout(60000);
   iconPage.setDefaultNavigationTimeout(60000);
 
-  await runInDevice(page, imgPage, iconPage, url, country, proxy);
+  await runInDevice(appId,page, imgPage, iconPage, url, country, proxy);
   await browser.close();
 };
 
@@ -96,6 +97,7 @@ const getVideo = async (page: Page): Promise<string> => {
 
 // 打开页面解析
 const runInDevice = async (
+  appId: string,
   page: Page,
   imgPage: Page,
   iconPage: Page,
@@ -131,7 +133,7 @@ const runInDevice = async (
     // 建立文件夹
     const basePath = `${dirname(
       __dirname
-    )}/downloads/google/${name}/${country}`;
+    )}/downloads/google/${appId}/${name}/${country}`;
     mkdir(basePath, { recursive: true }, (err) => {
       if (err) {
         console.log(err);
@@ -173,7 +175,7 @@ const runInDevice = async (
   }
 };
 
-export default async (url: string, country: string, proxy: string) => {
+export default async (appId: string,url: string, country: string, proxy: string) => {
   let args: string[] = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -208,5 +210,5 @@ export default async (url: string, country: string, proxy: string) => {
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(url, country, proxy, config);
+  await run(appId,url, country, proxy, config);
 };

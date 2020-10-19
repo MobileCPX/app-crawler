@@ -15,7 +15,7 @@ const googlePlayCrawler = async (
 ) => {
   const url = `https://play.google.com/store/apps/details?id=${appId}`;
   console.log(`google: ${url}`);
-  await google(url, country, proxy);
+  await google(appId,url, country, proxy);
 };
 
 // apple: https://itunes.apple.com/us/app/id1472822892?mt=8 跳转
@@ -28,7 +28,7 @@ const appleStoreCrawler = async (
 ) => {
   const url = `https://apps.apple.com/${country}/app/${appId}`;
   console.log(`apple: ${url}`);
-  await apple(url, country, proxy);
+  await apple(appId,url, country, proxy);
 };
 
 export { googlePlayCrawler, appleStoreCrawler };

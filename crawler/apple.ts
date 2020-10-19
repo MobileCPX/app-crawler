@@ -9,13 +9,13 @@ import { dirname } from "path";
 import { configAxios, appleDownload } from "./downloader";
 
 // 浏览器开始运行
-const run = async (url: string, country: string, config: LaunchOptions) => {
+const run = async (appId: string,url: string, country: string, config: LaunchOptions) => {
   const browser = await launch(config);
   const page = await browser.newPage();
   page.setDefaultNavigationTimeout(60000);
 
   // 设备: 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
-  await runInDevice(page, url, country);
+  await runInDevice(appId,page, url, country);
 
   await browser.close();
 };
@@ -50,7 +50,7 @@ const getIcons = async (page: Page): Promise<string[]> => {
 };
 
 // 切换设备打开页面解析
-const runInDevice = async (page: Page, url: string, country: string) => {
+const runInDevice = async (appId: string,page: Page, url: string, country: string) => {
   try {
     await page.goto(url);
     // 等待app icon
@@ -76,7 +76,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
     name = name.trim();
 
     // 建立文件夹
-    const basePath = `${dirname(__dirname)}/downloads/apple/${name}/${country}`;
+    const basePath = `${dirname(__dirname)}/downloads/apple/${appId}/${name}/${country}`;
     mkdir(basePath, { recursive: true }, (err) => {
       if (err) {
         console.log(err);
@@ -131,7 +131,7 @@ const runInDevice = async (page: Page, url: string, country: string) => {
   }
 };
 
-export default async (url: string, country: string, proxy: string) => {
+export default async (appId: string,url: string, country: string, proxy: string) => {
   let args: string[] = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -157,5 +157,5 @@ export default async (url: string, country: string, proxy: string) => {
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(url, country, config);
+  await run(appId,url, country, config);
 };
