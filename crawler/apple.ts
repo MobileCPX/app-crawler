@@ -3,21 +3,22 @@
  * Author:         Navi
  * Created Date:   2020-08-12 11:43
  */
-import { launch, LaunchOptions, Page } from "puppeteer";
+import { launch, LaunchOptions, Page, Browser } from "puppeteer";
 import { mkdir } from "fs";
 import { dirname } from "path";
 import { configAxios, appleDownload } from "./downloader";
 
 // 浏览器开始运行
-const run = async (appId: string,url: string, country: string, config: LaunchOptions) => {
+const run = async (
+  appId: string,
+  url: string,
+  country: string,
+  config: LaunchOptions,
+) => {
   const browser = await launch(config);
-  const page = await browser.newPage();
-  page.setDefaultNavigationTimeout(60000);
 
   // 设备: 6.5英寸、5.5英寸、ipad pro 3、ipad pro 2
-  await runInDevice(appId,page, url, country);
-
-  await browser.close();
+  await runInDevice(appId, browser, url, country);
 };
 
 // 获取图片链接
@@ -32,7 +33,7 @@ const getImgs = async (page: Page): Promise<string[]> => {
         srcs.push(...srcset.replace(/ 2x$/, "").split(" 1x,"));
       });
       return srcs;
-    }
+    },
   );
 };
 
@@ -45,21 +46,29 @@ const getIcons = async (page: Page): Promise<string[]> => {
       const srcset = icon.getAttribute("srcset");
       srcs.push(...srcset.replace(/ 2x$/, "").split(" 1x,"));
       return srcs;
-    }
+    },
   );
 };
 
 // 切换设备打开页面解析
-const runInDevice = async (appId: string,page: Page, url: string, country: string) => {
+const runInDevice = async (
+  appId: string,
+  browser: Browser,
+  url: string,
+  country: string,
+) => {
   try {
+    const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(60000);
+
     await page.goto(url);
     // 等待app icon
     await page.waitForSelector(
-      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img"
+      "picture.we-artwork.ember-view.product-hero__artwork.we-artwork--fullwidth.we-artwork--ios-app-icon > img",
     );
     // 等待截图展示加载图片
     await page.waitForSelector(
-      "div.we-screenshot-viewer__screenshots > ul > li > picture > img"
+      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
     );
     // 稍等一会
     await page.waitFor(500);
@@ -67,7 +76,7 @@ const runInDevice = async (appId: string,page: Page, url: string, country: strin
     // 获取app标题
     let name = await page.$eval(
       "h1.product-header__title.app-header__title",
-      (title) => title.textContent
+      (title) => title.textContent,
     );
 
     // 处理名字
@@ -76,7 +85,9 @@ const runInDevice = async (appId: string,page: Page, url: string, country: strin
     name = name.trim();
 
     // 建立文件夹
-    const basePath = `${dirname(__dirname)}/downloads/apple/${appId}/${name}/${country}`;
+    const basePath = `${dirname(
+      __dirname,
+    )}/downloads/apple/${appId}/${name}/${country}`;
     mkdir(basePath, { recursive: true }, (err) => {
       if (err) {
         console.log(err);
@@ -103,7 +114,7 @@ const runInDevice = async (appId: string,page: Page, url: string, country: strin
     await page.tap("ul.gallery-nav__items > li:nth-child(2) >a");
     // 等待截图展示加载图片
     await page.waitForSelector(
-      "div.we-screenshot-viewer__screenshots > ul > li > picture > img"
+      "div.we-screenshot-viewer__screenshots > ul > li > picture > img",
     );
 
     // 稍等一会
@@ -117,7 +128,7 @@ const runInDevice = async (appId: string,page: Page, url: string, country: strin
       const paths = imgs[i].split("/");
       appleDownload(
         ipadImgs[i],
-        `${basePath}/ipad${i + 1}_${paths[paths.length - 1]}`
+        `${basePath}/ipad${i + 1}_${paths[paths.length - 1]}`,
       );
     }
 
@@ -128,10 +139,17 @@ const runInDevice = async (appId: string,page: Page, url: string, country: strin
     }
     console.log(`### ${url} error:\n`);
     console.log(error);
+  } finally {
+    await browser.close();
   }
 };
 
-export default async (appId: string,url: string, country: string, proxy: string) => {
+export default async (
+  appId: string,
+  url: string,
+  country: string,
+  proxy: string,
+) => {
   let args: string[] = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -157,5 +175,5 @@ export default async (appId: string,url: string, country: string, proxy: string)
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(appId,url, country, config);
+  await run(appId, url, country, config);
 };

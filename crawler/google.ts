@@ -3,32 +3,22 @@
  * Author:         Navi
  * Created Date:   2020-08-12 11:43
  */
-import { launch, LaunchOptions, Page, devices } from "puppeteer";
+import { launch, LaunchOptions, Page, devices, Browser } from "puppeteer";
 import { googleDownload, youtubeDownload } from "./downloader";
 import { mkdir } from "fs";
 import { dirname } from "path";
 
 // 浏览器开始运行
 const run = async (
-  appId:string,
+  appId: string,
   url: string,
   country: string,
   proxy: string,
-  config: LaunchOptions
+  config: LaunchOptions,
 ) => {
   const browser = await launch(config);
-  const page = await browser.newPage();
-  page.emulate(devices["iPad landscape"]);
 
-  const imgPage = await browser.newPage(); // 用来访问图片截图
-  const iconPage = await browser.newPage(); // 用来访问图片截图
-
-  page.setDefaultNavigationTimeout(60000);
-  imgPage.setDefaultNavigationTimeout(60000);
-  iconPage.setDefaultNavigationTimeout(60000);
-
-  await runInDevice(appId,page, imgPage, iconPage, url, country, proxy);
-  await browser.close();
+  await runInDevice(appId, browser, url, country, proxy);
 };
 
 // 获取图片链接
@@ -58,7 +48,7 @@ const getImgs = async (page: Page): Promise<string[]> => {
         srcs.push(srcset.replace(/ 2x$/, ""));
       });
       return srcs;
-    }
+    },
   );
 };
 
@@ -75,7 +65,7 @@ const getIcons = async (page: Page): Promise<string[]> => {
       srcs.push(src);
       srcs.push(srcset.replace(/ 2x$/, ""));
       return srcs;
-    }
+    },
   );
 };
 
@@ -83,12 +73,12 @@ const getIcons = async (page: Page): Promise<string[]> => {
 const getVideo = async (page: Page): Promise<string> => {
   // data-trailer-url="https://www.youtube.com/embed/kIe5CHbOZVE?ps=play&amp;vq=large&amp;rel=0&amp;autohide=1&amp;showinfo=0&amp;authuser=0"
   const element = await page.$(
-    "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > div > div > button"
+    "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > div > div > button",
   );
   if (element) {
     return await page.$eval(
       "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > div > div > button",
-      (video) => video.getAttribute("data-trailer-url")
+      (video) => video.getAttribute("data-trailer-url"),
     );
   }
 
@@ -98,24 +88,32 @@ const getVideo = async (page: Page): Promise<string> => {
 // 打开页面解析
 const runInDevice = async (
   appId: string,
-  page: Page,
-  imgPage: Page,
-  iconPage: Page,
+  browser: Browser,
   url: string,
   country: string,
-  proxy: string
+  proxy: string,
 ) => {
   try {
+    const page = await browser.newPage();
+    page.emulate(devices["iPad landscape"]);
+
+    const imgPage = await browser.newPage(); // 用来访问图片截图
+    const iconPage = await browser.newPage(); // 用来访问图片截图
+
+    page.setDefaultNavigationTimeout(60000);
+    imgPage.setDefaultNavigationTimeout(60000);
+    iconPage.setDefaultNavigationTimeout(60000);
+
     await page.goto(url);
     // 等待google icon
     await page.waitForSelector(
       "body >  div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(1) > div > div > div > img",
-      { visible: true }
+      { visible: true },
     );
     // 等待截图展示加载图片
     await page.waitForSelector(
       "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(3) > c-wiz > div > div > div > button > img",
-      { visible: true }
+      { visible: true },
     );
 
     // 稍等一会
@@ -124,7 +122,7 @@ const runInDevice = async (
     // 获取app标题
     let name = await page.$eval(
       "body > div > div > c-wiz > div > div > div > div > main > c-wiz:nth-child(1) > c-wiz:nth-child(1) > div > div > div > div > c-wiz:nth-child(1) > h1 > span",
-      (title) => title.textContent
+      (title) => title.textContent,
     );
 
     // 处理名字
@@ -132,7 +130,7 @@ const runInDevice = async (
 
     // 建立文件夹
     const basePath = `${dirname(
-      __dirname
+      __dirname,
     )}/downloads/google/${appId}/${name}/${country}`;
     mkdir(basePath, { recursive: true }, (err) => {
       if (err) {
@@ -150,7 +148,7 @@ const runInDevice = async (
       await googleDownload(
         imgPage,
         imgs[i],
-        `${basePath}/${i + 1}_${paths[paths.length - 1]}.png`
+        `${basePath}/${i + 1}_${paths[paths.length - 1]}.png`,
       );
     }
 
@@ -160,7 +158,7 @@ const runInDevice = async (
       await googleDownload(
         iconPage,
         icons[i],
-        `${basePath}/icon_${paths[paths.length - 1]}.png`
+        `${basePath}/icon_${paths[paths.length - 1]}.png`,
       );
     }
 
@@ -172,10 +170,17 @@ const runInDevice = async (
     }
     console.log(`### ${url} error:\n`);
     console.log(error);
+  } finally {
+    await browser.close();
   }
 };
 
-export default async (appId: string,url: string, country: string, proxy: string) => {
+export default async (
+  appId: string,
+  url: string,
+  country: string,
+  proxy: string,
+) => {
   let args: string[] = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -210,5 +215,5 @@ export default async (appId: string,url: string, country: string, proxy: string)
     console.log(`with proxy: ${proxy}`);
   }
 
-  await run(appId,url, country, proxy, config);
+  await run(appId, url, country, proxy, config);
 };
